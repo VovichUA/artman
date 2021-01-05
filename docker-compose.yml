@@ -1,0 +1,62 @@
+version: '3.7'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./.docker/php/Dockerfile
+    container_name: artman
+    restart: unless-stopped
+    working_dir: /var/www/artman
+    tty: true
+    depends_on:
+      - mysql
+    volumes:
+      - ./app:/var/www/artman
+    ports:
+      - "9013:9000"
+    networks:
+      - artman
+
+  mysql:
+    image: mysql:5.7
+    container_name: artman_mysql
+    restart: unless-stopped
+    ports:
+      - "3313:3306"
+    environment:
+      MYSQL_DATABASE: artman
+      MYSQL_USER: artman
+      MYSQL_PASSWORD: artman
+      MYSQL_ROOT_PASSWORD: artman
+    networks:
+      - artman
+
+  nginx:
+    image: nginx:alpine
+    container_name: artman_nginx
+    restart: unless-stopped
+    ports:
+      - "8013:80"
+    volumes:
+      - ./.docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./app:/var/www/artman
+    depends_on:
+      - app
+    networks:
+      - artman
+
+  npm:
+    build:
+      context: .
+      dockerfile: ./.docker/nodejs/Dockerfile
+    container_name: artman_npm
+    restart: unless-stopped
+    volumes:
+      - ./app:/var/www/artman
+    networks:
+      - artman
+
+networks:
+  artman:
+    driver: bridge
